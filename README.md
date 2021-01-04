@@ -50,7 +50,7 @@ clips:
 python splitter.py clips.yml
 ```
 
-## concatena
+## mp4concat
 
 1.- Crear un archivo con el listado de los clip asociados a un tag.
 
