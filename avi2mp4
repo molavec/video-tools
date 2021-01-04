@@ -1,0 +1,66 @@
+#!/bin/sh
+
+###################
+# Script para convertir videos en gif sin perder calidad
+#
+# ref: http://blog.pkh.me/p/21-high-quality-gif-with-ffmpeg.html
+#
+# requiere tener instalados ffmpeg
+# brew install ffmpeg
+#
+###################
+
+# muestra ayuda
+function show_help {
+  echo "
+How to use:
+
+    avi2mp4 [-d output_directory]
+
+OPTIONS:
+    -d directorio de salida"
+  exit
+}
+
+# A POSIX variable
+OPTIND=1         # Reset in case getopts has been used previously in the shell.
+
+# Initialize our own variables:
+output_directory='mp4s'
+
+# Obtiene las opciones
+while getopts 'h?d:' opt; do
+  case "$opt" in
+  h|\?)
+    show_help
+    exit 0
+    ;;
+  d)  output_directory=$OPTARG
+    ;;
+  esac
+done
+
+shift $((OPTIND-1))
+[ "$1" = "--" ] && shift
+
+# start_time option
+if [ -n "$output_directory" ]; then
+  output_directory="$output_directory"
+fi
+
+# verifica que no esté creada la carpeta. En caso, contrario la crea.
+if [ ! -d "$output_directory" ]; then
+  mkdir_success=`mkdir $output_directory`
+fi
+
+# verifica convierte Avis a mp4 y los almacena en la carpeta de destino.
+OIFS="$IFS"
+IFS=$'\n'
+for i in *.{avi,AVI}; do
+  [ -f "$i" ] || break
+  echo "Convirtiendo archivo $i a mp4..."
+  filename=`echo $i | cut -d'.' -f 1`
+  echo "ffmpeg -i $i $output_directory/$filename.mp4"
+  `ffmpeg -i $i $output_directory/$filename.mp4`
+done
+IFS="$OIFS"

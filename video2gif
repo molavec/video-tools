@@ -1,0 +1,90 @@
+#!/bin/sh
+
+###################
+# Script para convertir videos en gif sin perder calidad
+#
+# ref: http://blog.pkh.me/p/21-high-quality-gif-with-ffmpeg.html
+#
+# requiere tener instalados ffmpeg
+# brew install ffmpeg
+#
+###################
+
+# muestra ayuda
+function show_help {
+  echo "
+How to use:
+
+    video2gif [-s start_time] [-t duration] [-S scale] input_file output_file
+
+OPTIONS:
+    -s punto de inicio en el vídeo
+    -t duración de la conversión
+    -s tamaño máximo del gif"
+  exit
+}
+
+# A POSIX variable
+OPTIND=1         # Reset in case getopts has been used previously in the shell.
+
+# Initialize our own variables:
+palette='/tmp/palette.png'
+start_time=''
+duration=''
+scale=''
+
+
+while getopts 'h?s:t:S:' opt; do
+    case "$opt" in
+    h|\?)
+        show_help
+        exit 0
+        ;;
+    s)  start_time=$OPTARG
+        ;;
+    t)  duration=$OPTARG
+        ;;
+    S)  scale=$OPTARG
+        ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+if [ "$#" -ne 2 ]; then
+    show_help
+    exit 0
+fi
+
+input_file=$1
+output_file=$2
+
+[ "$1" = "--" ] && shift
+
+# start_time option
+if [ -n "$start_time" ]; then
+    ss_opt="-ss $start_time"
+else
+    ss_opt=""
+fi
+
+# duration option
+if [ -n "$duration" ]; then
+    t_opt="-t $duration"
+else
+    t_opt=""
+fi
+
+# filters
+if [ -n "$scale" ]; then
+    filters="fps=15,scale=$scale:-1:flags=lanczos"
+else
+    filters="fps=15"
+fi
+
+#echo "duration = $duration"
+#echo "ffmpeg -v warning $ss_opt $t_opt -i $input_file -vf "$filters,palettegen" -y $palette"
+
+ffmpeg -v warning $ss_opt $t_opt -i $input_file -vf "$filters,palettegen" -y $palette
+ffmpeg -v warning $ss_opt $t_opt -i $input_file -i $palette -lavfi "$filters [x]; [x][1:v] paletteuse" -y $output_file
+open -a "Google Chrome" $output_file
